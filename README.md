@@ -17,6 +17,46 @@ invisible force.
 - The node is architecturally ignorant of its users. Seizure yields
   nothing actionable.
 
+![two federated gandr clients — feed and people views](docs/tui.png)
+*Two identities on two federated nodes: a feed post propagating (left)
+and a profile card with guestbook (right).*
+
+## Topology
+
+There is no hierarchy. Every node embeds its own Yggdrasil router and
+peers with whoever it chooses; every link is mutual, voluntary, and
+encrypted twice (the overlay session below, the federation session
+above). A "seed" is just a well-known first contact — it has no
+authority, and the network keeps working if it disappears.
+
+```
+                THE OVERLAY — one encrypted yggdrasil mesh
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                                                                  │
+  │              ⬡ node ────────────────── ⬡ node                    │
+  │             ╱   │   ╲                 ╱    │                     │
+  │            ╱    │    ╲               ╱     │                     │
+  │   ⬡ seed ─┘     │     └── ⬡ node ───┘      │                     │
+  │   relay·storage │          storage         │                     │
+  │                 │                          │                     │
+  └─────────────────┼──────────────────────────┼─────────────────────┘
+                    │ unix socket, 0660        │
+                    ▭ gandr client             ▭ gandr client
+                    identity: your key         identity: your key
+```
+
+- Any node may dial any node by its key; either side may drop the
+  link. Peers interact freely — add one, add ten, mesh however you
+  like. More links mean more paths; none are required.
+- Public content (chat, feed, forum) floods peer to peer, damped by
+  content-addressed dedupe. Nothing depends on any single node.
+- Sealed messages are end-to-end encrypted between identities — every
+  node, including your own, relays them as opaque blobs.
+- Trust (untrusted → neutral → trusted → vouched) is a local opinion
+  about a peer. It is never negotiated and never leaves your node.
+- The daemon never holds your identity key: the client signs envelopes
+  and hands them over the socket. The node serves; it does not know.
+
 ## Status
 
 v0.1 — core protocol complete and tested end to end:
@@ -35,12 +75,14 @@ v0.1 — core protocol complete and tested end to end:
 - `pkg/ipc` + `cmd/gandrd` — the daemon; full two-daemon
   federation test: chat, profiles, deletes propagate end to end.
 - `pkg/clientdb` + `pkg/tui` + `cmd/gandr` — terminal client in full
-  BBS dress: green phosphor palette, ANSI block-art header, six tabs
-  (chat / feed / forum / sealed / peers / profile), sidebar, trust
-  badges and bars, inline overlays, sealed compose with deniable mode,
-  nicknames (local-only petnames) on every surface, IPC auto-reconnect
-  with exponential backoff. Responsive from 120-column full layout
-  down to 40x20 cyberdeck mode.
+  BBS dress: four local themes (classic phosphor, midnight, paper,
+  ice), compact live header with traffic widget, six intent-based tabs
+  (messages / people / feed / forum / network / settings), first-run
+  entry manifesto, sidebar, trust badges and bars, inline overlays,
+  sealed compose with deniable mode, nicknames (local-only petnames)
+  on every surface, optional mouse, IPC auto-reconnect with
+  exponential backoff. Responsive from 120-column full layout down to
+  40x20 cyberdeck mode.
 
 ## Build
 
