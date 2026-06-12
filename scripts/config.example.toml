@@ -1,0 +1,42 @@
+# gandrd example configuration
+# copy to /etc/gandrd/config.toml and edit
+
+[identity]
+keyfile = "/etc/gandrd/identity.key"
+# passphrase_file = "/etc/gandrd/passphrase"   # one line; chmod 600
+display_name = ""
+
+[network]
+# Yggdrasil link-layer listeners other yggdrasil nodes can peer with
+listen = ["tcp://0.0.0.0:4242"]
+# Yggdrasil link-layer peers (public peers or direct arrangements);
+# required to reach the overlay unless peers connect inbound
+peers = []
+# ygg_keyfile = "/var/lib/gandrd/yggdrasil.key"
+
+[peering]
+seed_node       = false
+max_peers       = 200
+trust_new_peers = "neutral"   # untrusted|neutral|trusted|vouched
+# Gandr seed nodes: hex-encoded yggdrasil node keys to federate with
+seeds = []
+
+[capabilities]
+chat    = true
+feed    = true
+forum   = true
+storage = false   # true on dedicated storage nodes
+relay   = true
+seed    = false   # true on bootstrap nodes
+
+[limits]
+max_payload_size = 65535     # bytes
+max_message_age  = 604800    # 7 days in seconds
+rate_limit_rpm   = 600       # per peer
+max_connections  = 500
+
+[ipc]
+socket = "/var/run/gandrd/gandr.sock"
+
+[storage]
+path = "/var/lib/gandrd"

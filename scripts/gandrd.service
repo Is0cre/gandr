@@ -1,0 +1,25 @@
+[Unit]
+Description=Gandr Node Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/gandrd --config /etc/gandrd/config.toml
+Restart=always
+RestartSec=10
+User=gandrd
+Group=gandrd
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallFilter=@system-service
+ReadWritePaths=/var/lib/gandrd
+RuntimeDirectory=gandrd
+StateDirectory=gandrd
+
+[Install]
+WantedBy=multi-user.target
