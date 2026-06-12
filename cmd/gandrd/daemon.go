@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"errors"
@@ -86,10 +87,10 @@ func (d *Daemon) Run() error {
 	}
 	d.ipcServer = srv
 
-	d.wg.Add(2)
+	d.wg.Add(3)
 	go d.acceptLoop()
 	go d.pruneLoop()
-	d.connectSeeds()
+	go d.seedLoop()
 
 	<-d.ctx.Done()
 	return nil
@@ -127,29 +128,63 @@ func (d *Daemon) acceptLoop() {
 	}
 }
 
-// connectSeeds attempts federation with configured seed nodes.
-func (d *Daemon) connectSeeds() {
+// seedRetryInterval is how often the seed loop re-checks that every
+// configured seed has a live session.
+const seedRetryInterval = 15 * time.Second
+
+// seedLoop keeps federation with the configured seed nodes alive: at
+// startup the overlay may not be routable yet, and a seed can reboot
+// at any time, so a single dial attempt is never enough. Each pass
+// dials only seeds without a live session; failures stay silent per
+// protocol and are simply retried next tick.
+func (d *Daemon) seedLoop() {
+	defer d.wg.Done()
 	seeds, err := d.cfg.SeedKeys()
+	if err != nil || len(seeds) == 0 {
+		return
+	}
+	ticker := time.NewTicker(seedRetryInterval)
+	defer ticker.Stop()
+	for {
+		for _, key := range seeds {
+			if d.seedConnected(key) {
+				continue
+			}
+			d.dialSeed(key)
+		}
+		select {
+		case <-d.ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// seedConnected reports whether a live peer session runs over the
+// given yggdrasil node key.
+func (d *Daemon) seedConnected(key []byte) bool {
+	for _, p := range d.table.List() {
+		if bytes.Equal(p.Addr.YggKey, key) {
+			return true
+		}
+	}
+	return false
+}
+
+// dialSeed makes one bounded federation attempt to a seed node.
+func (d *Daemon) dialSeed(key []byte) {
+	ctx, cancel := context.WithTimeout(d.ctx, seedRetryInterval)
+	defer cancel()
+	conn, err := d.transport.Dial(ctx, network.PeerAddr{YggKey: ed25519.PublicKey(key)})
 	if err != nil {
 		return
 	}
-	for _, key := range seeds {
-		key := key
-		d.wg.Add(1)
-		go func() {
-			defer d.wg.Done()
-			conn, err := d.transport.Dial(d.ctx, network.PeerAddr{YggKey: ed25519.PublicKey(key)})
-			if err != nil {
-				return
-			}
-			sess, err := federation.Initiate(d.ctx, conn, d.fedCfg)
-			if err != nil {
-				conn.Close()
-				return
-			}
-			d.adoptSession(sess)
-		}()
+	sess, err := federation.Initiate(ctx, conn, d.fedCfg)
+	if err != nil {
+		conn.Close()
+		return
 	}
+	d.adoptSession(sess)
 }
 
 // adoptSession registers an established session and pumps its messages.
@@ -163,7 +198,9 @@ func (d *Daemon) adoptSession(sess *federation.Session) {
 	go func() {
 		defer d.wg.Done()
 		defer func() {
-			d.table.Remove(sess.PeerIdentity)
+			// remove only if this session still owns the entry — a
+			// reconnect may have replaced it under the same identity
+			d.table.RemoveSession(sess.PeerIdentity, sess)
 			d.notifyPeerUpdate()
 		}()
 		for {

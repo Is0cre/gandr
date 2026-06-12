@@ -46,9 +46,9 @@ type NetworkConfig struct {
 
 // PeeringConfig governs the federation layer.
 type PeeringConfig struct {
-	SeedNode      bool     `toml:"seed_node"`
-	MaxPeers      int      `toml:"max_peers"`
-	TrustNewPeers string   `toml:"trust_new_peers"`
+	SeedNode      bool   `toml:"seed_node"`
+	MaxPeers      int    `toml:"max_peers"`
+	TrustNewPeers string `toml:"trust_new_peers"`
 	// Seeds are Gandr seed nodes given as hex-encoded Yggdrasil node
 	// keys; gandrd attempts federation with them at startup.
 	Seeds []string `toml:"seeds"`

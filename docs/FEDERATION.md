@@ -17,6 +17,16 @@ retransmission (250ms base, 5 attempts, exponential backoff), and
 dedupe. Result: reliable message delivery, unordered, which is all the
 envelope layer needs.
 
+The header's final byte is an **epoch**: a random nonzero value fixed
+for the lifetime of the sending process. Connections are keyed by node
+key, so without it a restarted peer's new handshake would be demuxed
+into the dead connection and silently swallowed. A frame bearing a
+different nonzero epoch than the one the connection was established
+with retires the old connection and surfaces a fresh one to the
+acceptor. Senders predating the field emit 0x00, which never triggers
+a reset. Epochs ride inside Yggdrasil's encrypted sessions, so only
+the genuine peer can reset its own connection.
+
 ## Handshake
 
 Four steps. Every step is a signed envelope. Any invalid signature,

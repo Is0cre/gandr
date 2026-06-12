@@ -344,13 +344,13 @@ func TestMuxGarbageFrames(t *testing.T) {
 	garbage := [][]byte{
 		nil,
 		{0x00},
-		{0x47},                          // magic only, too short
-		bytes.Repeat([]byte{0x47}, 12),  // one byte short of a header
-		{0x47, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0}, // unknown frame type
-		{0x47, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 5, 2, 0}, // fragIndex >= fragCount
-		{0x47, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0}, // fragCount == 0
+		{0x47},                         // magic only, too short
+		bytes.Repeat([]byte{0x47}, 12), // one byte short of a header
+		{0x47, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},   // unknown frame type
+		{0x47, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 5, 2, 0},   // fragIndex >= fragCount
+		{0x47, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},   // fragCount == 0
 		{0x47, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 0, 200, 0}, // fragCount > max
-		{0x99, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0}, // wrong magic
+		{0x99, 0x01, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0},   // wrong magic
 	}
 	for _, g := range garbage {
 		pb.WriteTo(g, fakeAddr("a"))
@@ -391,5 +391,76 @@ func TestDedupe(t *testing.T) {
 	d.add(7)
 	if !d.has(5) {
 		t.Fatal("ring corrupted by duplicate add")
+	}
+}
+
+// TestMuxPeerRestart reproduces the seed-node wedge: peer A
+// establishes a conn, restarts (new mux, same node key, new epoch),
+// and dials again. B must retire the dead conn and surface the new
+// one to Accept — without the epoch check, A's new handshake would be
+// demuxed into the dead conn's inbox and swallowed forever.
+func TestMuxPeerRestart(t *testing.T) {
+	f := newFabric(0)
+	pa := f.port("a")
+	pb := f.port("b")
+	ma := newMux(pa, fakeCodec{}, 65535, PeerAddr{YggKey: []byte("a")})
+	mb := newMux(pb, fakeCodec{}, 65535, PeerAddr{YggKey: []byte("b")})
+	t.Cleanup(func() { ma.Close(); mb.Close() })
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	connAB, err := ma.Dial(ctx, PeerAddr{YggKey: []byte("b")})
+	if err != nil {
+		t.Fatalf("Dial: %v", err)
+	}
+	if err := connAB.Send(ctx, []byte("first life")); err != nil {
+		t.Fatalf("Send: %v", err)
+	}
+	old, err := mb.Accept(ctx)
+	if err != nil {
+		t.Fatalf("Accept: %v", err)
+	}
+	if _, err := old.Recv(ctx); err != nil {
+		t.Fatalf("Recv: %v", err)
+	}
+
+	// "restart" A: new mux on a fresh port, same node key
+	ma.Close()
+	pa2 := f.port("a")
+	ma2 := newMux(pa2, fakeCodec{}, 65535, PeerAddr{YggKey: []byte("a")})
+	if ma2.epoch == ma.epoch {
+		// random epochs can collide 1/255; force a difference so the
+		// test exercises the reset path deterministically
+		ma2.epoch++
+		if ma2.epoch == 0 {
+			ma2.epoch = 1
+		}
+	}
+	t.Cleanup(func() { ma2.Close() })
+
+	connAB2, err := ma2.Dial(ctx, PeerAddr{YggKey: []byte("b")})
+	if err != nil {
+		t.Fatalf("re-Dial after restart: %v", err)
+	}
+	if err := connAB2.Send(ctx, []byte("second life")); err != nil {
+		t.Fatalf("Send after restart: %v", err)
+	}
+
+	// B must see a NEW conn carrying the new message...
+	fresh, err := mb.Accept(ctx)
+	if err != nil {
+		t.Fatalf("Accept after restart: %v", err)
+	}
+	msg, err := fresh.Recv(ctx)
+	if err != nil {
+		t.Fatalf("Recv after restart: %v", err)
+	}
+	if string(msg) != "second life" {
+		t.Fatalf("got %q", msg)
+	}
+	// ...and the dead conn must be closed so its reader unblocks.
+	if _, err := old.Recv(ctx); err != ErrClosed {
+		t.Fatalf("old conn Recv err = %v, want ErrClosed", err)
 	}
 }

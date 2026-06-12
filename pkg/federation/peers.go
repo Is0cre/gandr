@@ -109,6 +109,22 @@ func (t *Table) Get(identity [32]byte) (*Peer, bool) {
 	return p, ok
 }
 
+// RemoveSession drops a peer only while it still runs the given
+// session. A pump cleaning up after a dead session must not remove
+// the entry once a reconnect has replaced the session under the same
+// identity.
+func (t *Table) RemoveSession(identity [32]byte, sess *Session) {
+	t.mu.Lock()
+	p, ok := t.peers[identity]
+	if !ok || p.Session != sess {
+		t.mu.Unlock()
+		return
+	}
+	delete(t.peers, identity)
+	t.mu.Unlock()
+	sess.Close()
+}
+
 // Remove drops a peer and closes its session if live.
 func (t *Table) Remove(identity [32]byte) {
 	t.mu.Lock()

@@ -18,10 +18,18 @@ import (
 //	[msg_id:     8 bytes]  random uint64, big-endian
 //	[frag_index: 1 byte ]
 //	[frag_count: 1 byte ]  >= 1
-//	[reserved:   1 byte ]  0x00
+//	[epoch:      1 byte ]  random nonzero per mux lifetime
 //
 // DATA frames carry fragment payload. ACK acknowledges a fully
 // reassembled message id. PING/PONG probe reachability.
+//
+// The epoch detects peer restarts: connections are keyed by node key,
+// so without it a restarted peer's new handshake would be demuxed into
+// the dead connection's inbox and silently swallowed. When a frame
+// arrives bearing a different nonzero epoch than the one the conn was
+// established with, the old conn is closed and a fresh one surfaces to
+// Accept. Senders predating this field emit 0x00, which never triggers
+// a reset — mixed versions behave as before.
 const (
 	frameMagic      = 0x47
 	frameHeaderSize = 13
@@ -76,6 +84,7 @@ type mux struct {
 	codec   addrCodec
 	mtu     int
 	local   PeerAddr
+	epoch   uint8 // random nonzero, stamped on every outgoing frame
 	accepts chan *muxConn
 
 	mu     sync.Mutex
@@ -90,12 +99,23 @@ func newMux(pc datagramConn, codec addrCodec, mtu int, local PeerAddr) *mux {
 		codec:   codec,
 		mtu:     mtu,
 		local:   local,
+		epoch:   randomEpoch(),
 		accepts: make(chan *muxConn, acceptBacklog),
 		peers:   make(map[string]*muxConn),
 		done:    make(chan struct{}),
 	}
 	go m.readLoop()
 	return m
+}
+
+// randomEpoch picks the mux's lifetime marker: any nonzero byte (zero
+// is reserved for senders that predate the field).
+func randomEpoch() uint8 {
+	for {
+		if b := crypto.RandomBytes(1)[0]; b != 0 {
+			return b
+		}
+	}
 }
 
 func (m *mux) LocalAddr() PeerAddr { return m.local }
@@ -204,11 +224,25 @@ func (m *mux) readLoop() {
 		frameType := buf[1]
 		msgID := binary.BigEndian.Uint64(buf[2:10])
 		fragIndex, fragCount := buf[10], buf[11]
+		epoch := buf[12]
 		body := buf[frameHeaderSize:n]
 
 		c, isNew, err := m.conn(peer)
 		if err != nil {
 			return
+		}
+		if !isNew && epoch != 0 && c.remoteEpoch != 0 && c.remoteEpoch != epoch {
+			// the peer restarted: this conn's reader is wired to a dead
+			// session and would swallow the new handshake. Retire it and
+			// let the fresh conn surface to Accept below.
+			c.Close()
+			c, isNew, err = m.conn(peer)
+			if err != nil {
+				return
+			}
+		}
+		if c.remoteEpoch == 0 {
+			c.remoteEpoch = epoch
 		}
 		if isNew {
 			select {
@@ -237,6 +271,10 @@ type muxConn struct {
 	peer    PeerAddr
 	netAddr net.Addr
 	inbox   chan []byte
+	// remoteEpoch is the peer's epoch at establishment; 0 until the
+	// first inbound frame (or forever, for pre-epoch senders). Touched
+	// only by the mux readLoop.
+	remoteEpoch uint8
 
 	mu      sync.Mutex
 	pending map[uint64]chan struct{} // msgID -> ack/pong signal
@@ -349,6 +387,7 @@ func (c *muxConn) writeFrame(frameType uint8, msgID uint64, fragIndex, fragCount
 	binary.BigEndian.PutUint64(frame[2:10], msgID)
 	frame[10] = fragIndex
 	frame[11] = fragCount
+	frame[12] = c.mux.epoch
 	copy(frame[frameHeaderSize:], body)
 	_, err := c.mux.pc.WriteTo(frame, c.netAddr)
 	return err

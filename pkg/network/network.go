@@ -28,10 +28,10 @@ const MaxMessageSize = proto.MaxMessageSize
 
 // Transport errors.
 var (
-	ErrClosed       = errors.New("network: transport closed")
-	ErrTooLarge     = errors.New("network: message exceeds maximum size")
-	ErrSendTimeout  = errors.New("network: send not acknowledged")
-	ErrUnreachable  = errors.New("network: peer unreachable")
+	ErrClosed      = errors.New("network: transport closed")
+	ErrTooLarge    = errors.New("network: message exceeds maximum size")
+	ErrSendTimeout = errors.New("network: send not acknowledged")
+	ErrUnreachable = errors.New("network: peer unreachable")
 )
 
 // PeerAddr identifies a remote gandrd. Exactly one form is set: YggKey
