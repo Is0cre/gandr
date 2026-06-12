@@ -1,4 +1,3 @@
-dist/
 *.key
 *.db
 testdata/fuzz/
