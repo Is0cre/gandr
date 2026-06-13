@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1000" viewBox="0 0 1700 1000">
+  <defs>
+    <style>
+      text { font-family: "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace; }
+      .h1    { fill: #00ff41; font-size: 34px; font-weight: bold; letter-spacing: 6px; }
+      .rune  { fill: #ffb000; font-size: 40px; font-family: "Noto Sans Runic", sans-serif; }
+      .sub   { fill: #5d8a68; font-size: 15px; }
+      .tagr  { fill: #406a4a; font-size: 14px; }
+      .sect  { fill: #00ff41; font-size: 17px; font-weight: bold; letter-spacing: 3px; }
+      .node  { fill: #00cc33; font-size: 17px; font-weight: bold; }
+      .role  { fill: #5d8a68; font-size: 13px; }
+      .note  { fill: #406a4a; font-size: 12.5px; font-style: italic; }
+      .cli   { fill: #00ffaa; font-size: 15px; font-weight: bold; }
+      .key   { fill: #5d8a68; font-size: 12px; }
+      .lbl   { fill: #406a4a; font-size: 12.5px; }
+      .layT  { fill: #00cc33; font-size: 14.5px; font-weight: bold; }
+      .layB  { fill: #7da388; font-size: 12.8px; }
+      .them  { fill: #c46a6a; font-size: 12.8px; }
+      .us    { fill: #7da388; font-size: 12.8px; }
+      .vs    { fill: #ffb000; font-size: 12.5px; font-weight: bold; }
+      .amber { fill: #ffb000; font-size: 12.5px; }
+      .foot  { fill: #406a4a; font-size: 13px; }
+      .link     { stroke: #1d4f2a; stroke-width: 2; }
+      .sock     { stroke: #1d4f2a; stroke-width: 1.5; stroke-dasharray: 3 4; }
+      .flood    { stroke: #00ff41; stroke-width: 1.6; stroke-dasharray: 7 5; }
+      .sealedp  { stroke: #ffb000; stroke-width: 1.6; stroke-dasharray: 2 5; }
+      .hex      { fill: #0b1a0f; stroke: #00cc33; stroke-width: 2; }
+      .hexseed  { fill: #11200a; stroke: #ffb000; stroke-width: 2; }
+      .term     { fill: #081410; stroke: #00ffaa; stroke-width: 1.6; }
+      .panel    { fill: #0a120c; stroke: #16341e; stroke-width: 1.5; }
+      .lay      { fill: #0d1810; stroke: #1d4f2a; stroke-width: 1; }
+    </style>
+    <marker id="ag" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9" fill="none" stroke="#00ff41" stroke-width="1.4"/>
+    </marker>
+    <marker id="aa" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L8,4.5 L0,9" fill="none" stroke="#ffb000" stroke-width="1.4"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect width="1700" height="1000" fill="#070b08"/>
+  <rect x="14" y="14" width="1672" height="972" fill="none" stroke="#16341e" stroke-width="2"/>
+
+  <!-- header -->
+  <text x="46" y="72" class="rune">ᚷ</text>
+  <text x="92" y="68" class="h1">GANDR</text>
+  <text x="46" y="102" class="sub">a sending — federated, censorship-resistant communication over an encrypted mesh</text>
+  <text x="1654" y="62" text-anchor="end" class="tagr">no server · no accounts · no algorithm · no logs · no killswitch</text>
+  <line x1="40" y1="124" x2="1660" y2="124" stroke="#16341e" stroke-width="2"/>
+
+  <!-- ===================== TOPOLOGY (left) ===================== -->
+  <text x="46" y="162" class="sect">TOPOLOGY — A FREE MESH</text>
+  <text x="46" y="184" class="lbl">every link is voluntary and mutual; any node may dial any node by its key, either side may drop it</text>
+
+  <!-- federation links -->
+  <line x1="290" y1="280" x2="690" y2="260" class="link"/>
+  <line x1="290" y1="280" x2="455" y2="400" class="link"/>
+  <line x1="290" y1="280" x2="255" y2="560" class="link"/>
+  <line x1="690" y1="260" x2="545" y2="400" class="link"/>
+  <line x1="690" y1="260" x2="700" y2="560" class="link"/>
+  <line x1="255" y1="560" x2="700" y2="560" class="link"/>
+  <line x1="255" y1="560" x2="465" y2="430" class="link"/>
+  <line x1="545" y1="425" x2="700" y2="560" class="link"/>
+  <text x="430" y="237" class="lbl" text-anchor="middle">— encrypted federation sessions —</text>
+
+  <!-- nodes (hexagons) -->
+  <!-- valdis -->
+  <polygon class="hex" points="290,244 321,262 321,298 290,316 259,298 259,262"/>
+  <text x="290" y="286" text-anchor="middle" fill="#00ff41" font-size="20">⬡</text>
+  <text x="338" y="276" class="node">valdis</text>
+  <text x="338" y="294" class="role">relay</text>
+
+  <!-- seed-node -->
+  <polygon class="hexseed" points="690,224 721,242 721,278 690,296 659,278 659,242"/>
+  <text x="690" y="266" text-anchor="middle" fill="#ffb000" font-size="20">⬡</text>
+  <text x="738" y="252" class="node">seed-node</text>
+  <text x="738" y="270" class="role">seed · relay · storage</text>
+  <text x="738" y="287" class="note">a well-known first contact,</text>
+  <text x="738" y="302" class="note">not an authority</text>
+
+  <!-- vps-01 -->
+  <polygon class="hex" points="500,382 531,400 531,436 500,454 469,436 469,400"/>
+  <text x="500" y="424" text-anchor="middle" fill="#00ff41" font-size="20">⬡</text>
+  <text x="548" y="408" class="node">vps-01</text>
+  <text x="548" y="426" class="role">relay · storage</text>
+  <text x="548" y="443" class="note">headless: serves no client,</text>
+  <text x="548" y="458" class="note">carries traffic anyway</text>
+
+  <!-- basement -->
+  <polygon class="hex" points="255,524 286,542 286,578 255,596 224,578 224,542"/>
+  <text x="255" y="566" text-anchor="middle" fill="#00ff41" font-size="20">⬡</text>
+  <text x="303" y="556" class="node">basement</text>
+  <text x="303" y="574" class="role">relay — one box, two people</text>
+
+  <!-- pi-attic -->
+  <polygon class="hex" points="700,524 731,542 731,578 700,596 669,578 669,542"/>
+  <text x="700" y="566" text-anchor="middle" fill="#00ff41" font-size="20">⬡</text>
+  <text x="748" y="556" class="node">pi-attic</text>
+  <text x="748" y="574" class="role">storage · relay</text>
+
+  <!-- unix sockets -->
+  <line x1="225" y1="596" x2="165" y2="690" class="sock"/>
+  <line x1="265" y1="596" x2="330" y2="690" class="sock"/>
+  <line x1="700" y1="596" x2="700" y2="690" class="sock"/>
+  <text x="385" y="650" class="lbl">unix socket 0660 — the daemon's only door</text>
+  <text x="730" y="650" class="lbl">(ssh to the pi, run gandr there)</text>
+
+  <!-- clients -->
+  <rect class="term" x="95" y="690" width="140" height="66" rx="3"/>
+  <text x="165" y="716" text-anchor="middle" class="cli">▭ mati</text>
+  <text x="165" y="736" text-anchor="middle" class="key">identity ~1bef…</text>
+
+  <rect class="term" x="262" y="690" width="140" height="66" rx="3"/>
+  <text x="332" y="716" text-anchor="middle" class="cli">▭ guest</text>
+  <text x="332" y="736" text-anchor="middle" class="key">identity ~9a02…</text>
+
+  <rect class="term" x="630" y="690" width="140" height="66" rx="3"/>
+  <text x="700" y="716" text-anchor="middle" class="cli">▭ byte_me</text>
+  <text x="700" y="736" text-anchor="middle" class="key">identity ~db53…</text>
+
+  <text x="95" y="786" class="key">your identity is an Ed25519 keyfile in YOUR pocket — move it to any machine, you are still you.</text>
+  <text x="95" y="804" class="key">the daemon never sees it: clients hand over finished signed envelopes, nothing else.</text>
+
+  <!-- flows -->
+  <text x="46" y="846" class="sect" font-size="15">TWO KINDS OF TRAFFIC</text>
+  <path d="M 120,874 H 360" fill="none" class="flood" marker-end="url(#ag)"/>
+  <text x="46" y="879" class="us">public</text>
+  <text x="375" y="879" class="us">a post floods node to node, stored content-addressed, duplicates damped.</text>
+  <text x="375" y="897" class="us">no ranking, no review queue — and only the author's key can delete it.</text>
+
+  <path d="M 120,926 H 360" fill="none" class="sealedp" marker-end="url(#aa)"/>
+  <text x="46" y="931" class="amber">sealed</text>
+  <text x="375" y="931" class="amber">the same opaque, zero-padded blob at every hop — including both daemons.</text>
+  <text x="375" y="949" class="amber">only the recipient's key opens it; deniable mode leaves nothing to prove authorship.</text>
+
+  <!-- ===================== INFO COLUMN (right) ===================== -->
+  <!-- encryption panel -->
+  <rect class="panel" x="1010" y="146" width="650" height="380" rx="4"/>
+  <text x="1034" y="182" class="sect">ENCRYPTION, LAYER BY LAYER</text>
+
+  <rect class="lay" x="1034" y="200" width="602" height="56" rx="3"/>
+  <text x="1050" y="223" class="layT">identity &amp; every message — Ed25519</text>
+  <text x="1050" y="243" class="layB">every envelope is signed; signatures verify BEFORE payloads are parsed</text>
+
+  <rect class="lay" x="1034" y="264" width="602" height="56" rx="3"/>
+  <text x="1050" y="287" class="layT">sealed messages — Noise X: X25519 + XChaCha20-Poly1305</text>
+  <text x="1050" y="307" class="layB">zero-padded to hide length · optional deniable mode (no inner signature)</text>
+
+  <rect class="lay" x="1034" y="328" width="602" height="56" rx="3"/>
+  <text x="1050" y="351" class="layT">node ↔ node sessions — ephemeral X25519 → HKDF</text>
+  <text x="1050" y="371" class="layB">fresh keys per session, direction-bound AAD kills reflection attacks</text>
+
+  <rect class="lay" x="1034" y="392" width="602" height="56" rx="3"/>
+  <text x="1050" y="415" class="layT">transport — yggdrasil overlay</text>
+  <text x="1050" y="435" class="layB">end-to-end encrypted mesh routing; transport key ≠ identity key, always</text>
+
+  <rect class="lay" x="1034" y="456" width="602" height="56" rx="3"/>
+  <text x="1050" y="479" class="layT">at rest — Argon2id keyfiles · encrypted client db</text>
+  <text x="1050" y="499" class="layB">nicknames, notes, blocklist, sealed inbox — all encrypted, all local</text>
+
+  <!-- comparison panel -->
+  <rect class="panel" x="1010" y="546" width="650" height="380" rx="4"/>
+  <text x="1034" y="582" class="sect">VS. THE PLATFORMS</text>
+
+  <text x="1034" y="616" class="them">they keep an account database</text>
+  <text x="1340" y="616" class="us">your account is a keyfile only you hold</text>
+
+  <text x="1034" y="650" class="them">they see who talks to whom</text>
+  <text x="1340" y="650" class="us">carriers see opaque padded blobs</text>
+
+  <text x="1034" y="684" class="them">they rank, shadowban, moderate</text>
+  <text x="1340" y="684" class="us">deletes require the author's signature</text>
+
+  <text x="1034" y="718" class="them">they log everything, forever</text>
+  <text x="1340" y="718" class="us">no content, peer, or metadata logs</text>
+
+  <text x="1034" y="752" class="them">seize their server: everything leaks</text>
+  <text x="1340" y="752" class="us">seized node: public posts, sealed blobs</text>
+
+  <text x="1034" y="786" class="them">one company, one killswitch</text>
+  <text x="1340" y="786" class="us">mesh routes around any dead node</text>
+
+  <text x="1034" y="820" class="them">trust decided by a safety team</text>
+  <text x="1340" y="820" class="us">trust is your local opinion, never sent</text>
+
+  <line x1="1034" y1="846" x2="1636" y2="846" stroke="#16341e" stroke-width="1.5"/>
+  <text x="1034" y="876" class="layB">a node is a courier, not a host. it is architecturally ignorant of its</text>
+  <text x="1034" y="896" class="layB">users — there is nothing actionable to subpoena, buy, or breach.</text>
+
+  <!-- footer -->
+  <line x1="40" y1="956" x2="1660" y2="956" stroke="#16341e" stroke-width="2"/>
+  <text x="1654" y="978" text-anchor="end" class="foot">github.com/Is0cre/gandr · docs: PROTOCOL · FEDERATION · SEALED</text>
+  <text x="46" y="978" class="foot">two binaries: gandrd (node) + gandr (tui client) · go, no cgo on the node, no web, ever</text>
+</svg>

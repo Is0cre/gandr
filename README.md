@@ -31,57 +31,13 @@ contact, not an authority. Any node may dial any node by its key,
 either side may drop the link, and the mesh shape is whatever its
 operators feel like. More links mean more paths; none are required.
 
-```
-   ┌──────────────────── the yggdrasil overlay ─────────────────────┐
-   │     one encrypted mesh · no center · no registry · no admin    │
-   │                                                                │
-   │     ⬡ valdis ──────────────────────── ⬡ seed-node              │
-   │     │ relay  ╲                      ╱ │  seed·relay·storage    │
-   │     │         ╲                    ╱  │                        │
-   │     │          ⬡ vps-01 ─────────╱    │                        │
-   │     │         ╱   relay·storage       │                        │
-   │     │        ╱    (headless: no       │                        │
-   │     │       ╱      client, carries    │                        │
-   │     │      ╱       traffic anyway)    │                        │
-   │     ⬡ basement ─────────────────────── ⬡ pi-attic              │
-   │       relay                              storage·relay         │
-   │      │     │                              │                    │
-   └──────┼─────┼──────────────────────────────┼────────────────────┘
-          │     │                              │
-          │ unix socket, 0660                  │ (ssh to the pi,
-          │     │                              │  run gandr there)
-          │     │                              │
-      ▭ mati  ▭ guest                       ▭ byte_me
-       client  client                        client
-      ~1bef…  ~9a02…                        ~db53…
-```
+![gandr topology — a free mesh, encryption layer by layer, vs. the platforms](docs/topology.png)
 
 A node is a courier, not a host. The `basement` box serves two people
 over its local socket; `vps-01` serves nobody and relays anyway; the
 identity keys live in the clients' keyfiles, never in any daemon. Move
 your keyfile to another machine and you are still you, from any node
 that will have you.
-
-How the two kinds of traffic move:
-
-```
-  a public post, born at mati's keyboard:
-
-    ▭ mati ─sign─▶ ⬡ basement ─flood─▶ ⬡ valdis ──▶ ⬡ seed-node ─▶ …
-                              └─flood─▶ ⬡ vps-01 ──▶ ⬡ pi-attic ─▶ ▭ byte_me
-
-    relayed node to node, stored content-addressed, duplicates damped.
-    no algorithm ranks it, no queue reviews it, and only mati's key
-    can issue its deletion.
-
-  a sealed message, mati ▶ byte_me:
-
-    ▭ mati ─seal─▶ ⬡ basement ─▶ … whatever path exists … ─▶ ▭ byte_me
-
-    every hop — including both daemons — carries the same opaque,
-    zero-padded blob. only byte_me's key opens it; in deniable mode
-    even byte_me can't prove to a third party who wrote it.
-```
 
 What is conspicuously absent is the point: no server, no account
 database, no feed algorithm, no moderation queue, no terms of service.
