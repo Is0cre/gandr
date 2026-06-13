@@ -23,39 +23,73 @@ and a profile card with guestbook (right).*
 
 ## Topology
 
-There is no hierarchy. Every node embeds its own Yggdrasil router and
-peers with whoever it chooses; every link is mutual, voluntary, and
-encrypted twice (the overlay session below, the federation session
-above). A "seed" is just a well-known first contact — it has no
-authority, and the network keeps working if it disappears.
+There is no hierarchy and no roles you apply for. Every node embeds
+its own Yggdrasil router and peers with whoever it chooses; every link
+is mutual, voluntary, and encrypted twice — the overlay session below,
+the federation session above. A "seed" is just a well-known first
+contact, not an authority. Any node may dial any node by its key,
+either side may drop the link, and the mesh shape is whatever its
+operators feel like. More links mean more paths; none are required.
 
 ```
-                THE OVERLAY — one encrypted yggdrasil mesh
-  ┌──────────────────────────────────────────────────────────────────┐
-  │                                                                  │
-  │              ⬡ node ────────────────── ⬡ node                    │
-  │             ╱   │   ╲                 ╱    │                     │
-  │            ╱    │    ╲               ╱     │                     │
-  │   ⬡ seed ─┘     │     └── ⬡ node ───┘      │                     │
-  │   relay·storage │          storage         │                     │
-  │                 │                          │                     │
-  └─────────────────┼──────────────────────────┼─────────────────────┘
-                    │ unix socket, 0660        │
-                    ▭ gandr client             ▭ gandr client
-                    identity: your key         identity: your key
+   ┌──────────────────── the yggdrasil overlay ─────────────────────┐
+   │     one encrypted mesh · no center · no registry · no admin    │
+   │                                                                │
+   │     ⬡ valdis ──────────────────────── ⬡ seed-node              │
+   │     │ relay  ╲                      ╱ │  seed·relay·storage    │
+   │     │         ╲                    ╱  │                        │
+   │     │          ⬡ vps-01 ─────────╱    │                        │
+   │     │         ╱   relay·storage       │                        │
+   │     │        ╱    (headless: no       │                        │
+   │     │       ╱      client, carries    │                        │
+   │     │      ╱       traffic anyway)    │                        │
+   │     ⬡ basement ─────────────────────── ⬡ pi-attic              │
+   │       relay                              storage·relay         │
+   │      │     │                              │                    │
+   └──────┼─────┼──────────────────────────────┼────────────────────┘
+          │     │                              │
+          │ unix socket, 0660                  │ (ssh to the pi,
+          │     │                              │  run gandr there)
+          │     │                              │
+      ▭ mati  ▭ guest                       ▭ byte_me
+       client  client                        client
+      ~1bef…  ~9a02…                        ~db53…
 ```
 
-- Any node may dial any node by its key; either side may drop the
-  link. Peers interact freely — add one, add ten, mesh however you
-  like. More links mean more paths; none are required.
-- Public content (chat, feed, forum) floods peer to peer, damped by
-  content-addressed dedupe. Nothing depends on any single node.
-- Sealed messages are end-to-end encrypted between identities — every
-  node, including your own, relays them as opaque blobs.
-- Trust (untrusted → neutral → trusted → vouched) is a local opinion
-  about a peer. It is never negotiated and never leaves your node.
-- The daemon never holds your identity key: the client signs envelopes
-  and hands them over the socket. The node serves; it does not know.
+A node is a courier, not a host. The `basement` box serves two people
+over its local socket; `vps-01` serves nobody and relays anyway; the
+identity keys live in the clients' keyfiles, never in any daemon. Move
+your keyfile to another machine and you are still you, from any node
+that will have you.
+
+How the two kinds of traffic move:
+
+```
+  a public post, born at mati's keyboard:
+
+    ▭ mati ─sign─▶ ⬡ basement ─flood─▶ ⬡ valdis ──▶ ⬡ seed-node ─▶ …
+                              └─flood─▶ ⬡ vps-01 ──▶ ⬡ pi-attic ─▶ ▭ byte_me
+
+    relayed node to node, stored content-addressed, duplicates damped.
+    no algorithm ranks it, no queue reviews it, and only mati's key
+    can issue its deletion.
+
+  a sealed message, mati ▶ byte_me:
+
+    ▭ mati ─seal─▶ ⬡ basement ─▶ … whatever path exists … ─▶ ▭ byte_me
+
+    every hop — including both daemons — carries the same opaque,
+    zero-padded blob. only byte_me's key opens it; in deniable mode
+    even byte_me can't prove to a third party who wrote it.
+```
+
+What is conspicuously absent is the point: no server, no account
+database, no feed algorithm, no moderation queue, no terms of service.
+Trust (untrusted → neutral → trusted → vouched) is a local opinion
+about a peer — never negotiated, never transmitted. Nicknames and
+blocklists live in the client's encrypted database and nowhere else.
+If a node dies, routes around it form; if a node is seized, it yields
+envelopes of public messages and sealed blobs it cannot read.
 
 ## Status
 
